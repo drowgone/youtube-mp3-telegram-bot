@@ -162,6 +162,6 @@ Pull request'lar qabul qilinadi!
 
 ---
 
-**Muallif**: Antigravity AI Assistant
+**Muallif**: drowgone
 **Versiya**: 1.0.0
 **Sana**: 2026-02-10
