@@ -14,7 +14,9 @@ YouTube playlist'laridan audiolarni yuklab olib, MP3 formatda Telegram orqali yu
 ## 🚀 O'rnatish
 
 ### 1. Repozitoriyani clone qiling
-
+```bash
+git clone https://github.com/drowgone/youtube-mp3-telegram-bot.git
+```
 
 ### 2. Virtual environment yarating
 
