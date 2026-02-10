@@ -62,12 +62,12 @@ class YouTubeHandler:
         self, 
         url: str, 
         progress_callback: Optional[Callable] = None
-    ) -> Optional[str]:
+    ) -> (Optional[str], Optional[str]):
         """
         Videoni yuklab olish va MP3 ga konvertatsiya qilish
         
         Returns:
-            MP3 fayl yo'li yoki None (xatolik bo'lsa)
+            (MP3 fayl yo'li, xatolik kodi/xabari)
         """
         try:
             # Progress hook
@@ -81,10 +81,20 @@ class YouTubeHandler:
             ydl_opts = YT_DLP_OPTIONS.copy()
             ydl_opts['progress_hooks'] = [progress_hook]
             
-            # Video ma'lumotlarini olish (fayl nomi uchun)
-            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-                info = ydl.extract_info(url, download=False)
-                video_title = info.get('title', 'audio')
+            # Video ma'lumotlarini olish
+            try:
+                with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    video_title = info.get('title', 'audio')
+            except yt_dlp.utils.DownloadError as e:
+                msg = str(e).lower()
+                if 'age restricted' in msg or 'sign in' in msg:
+                    return None, 'age_restricted'
+                if 'not available' in msg or 'deleted' in msg:
+                    return None, 'not_available'
+                if 'copyright' in msg:
+                    return None, 'copyright_error'
+                return None, 'download_failed'
             
             # Fayl nomini tozalash
             safe_title = sanitize_filename(video_title)
@@ -103,21 +113,21 @@ class YouTubeHandler:
             # MP3 faylni tekshirish
             if not os.path.exists(output_path):
                 logger.error(f"MP3 fayl topilmadi: {output_path}")
-                return None
+                return None, 'conversion_failed'
             
             # Fayl hajmini tekshirish
             file_size = get_file_size(output_path)
             if file_size > MAX_FILE_SIZE_BYTES:
                 logger.warning(f"Fayl juda katta: {file_size} bytes")
                 cleanup_file(output_path)
-                return None
+                return None, 'file_too_large'
             
             logger.info(f"Muvaffaqiyatli yuklab olindi: {output_path}")
-            return output_path
+            return output_path, None
         
         except Exception as e:
-            logger.error(f"Yuklab olishda xatolik: {e}")
-            return None
+            logger.error(f"Yuklab olishda kutilmagan xatolik: {e}")
+            return None, str(e)
     
     def download_playlist(
         self,
@@ -158,13 +168,13 @@ class YouTubeHandler:
                     })
                 
                 # Yuklab olish
-                file_path = self.download_and_convert(video_url, progress_callback)
+                file_path, error_msg = self.download_and_convert(video_url, progress_callback)
                 
                 if file_path:
                     downloaded_files.append(file_path)
                     logger.info(f"✓ Tayyor: {video_title}")
                 else:
-                    logger.warning(f"✗ Yuklab olinmadi: {video_title}")
+                    logger.warning(f"✗ Yuklab olinmadi: {video_title}. Xatolik: {error_msg}")
             
             logger.info(f"Jami yuklab olindi: {len(downloaded_files)}/{total_videos}")
             return downloaded_files

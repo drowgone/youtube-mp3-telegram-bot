@@ -117,26 +117,19 @@ class TelegramBot:
                 )
                 
                 # Yuklab olish va konvertatsiya qilish
-                file_path = self.youtube_handler.download_and_convert(video_url)
+                file_path, error_key = self.youtube_handler.download_and_convert(video_url)
                 
                 if not file_path:
                     # Xatolik
-                    error_text = f"❌ [{index}/{video_count}] {video_title[:50]}... - Yuklab olinmadi"
-                    await update.message.reply_text(error_text)
-                    continue
-                
-                # Fayl hajmini tekshirish
-                file_size = get_file_size(file_path)
-                file_size_mb = float(format_file_size(file_size))
-                
-                if file_size_mb > MAX_FILE_SIZE_MB:
-                    # Fayl juda katta
-                    warning_text = MESSAGES['file_too_large'].format(
-                        file_size_mb,
-                        MAX_FILE_SIZE_MB
+                    if error_key in MESSAGES:
+                        error_text = MESSAGES[error_key]
+                    else:
+                        error_text = MESSAGES['error'].format(error_key or "Noma'lum xatolik")
+                    
+                    await update.message.reply_text(
+                        f"❌ [{index}/{video_count}] {video_title[:50]}...\n{error_text}",
+                        parse_mode=ParseMode.MARKDOWN
                     )
-                    await update.message.reply_text(warning_text)
-                    cleanup_file(file_path)
                     continue
                 
                 # Faylni yuborish
@@ -154,7 +147,7 @@ class TelegramBot:
                 except Exception as e:
                     logger.error(f"Faylni yuborishda xatolik: {e}")
                     await update.message.reply_text(
-                        f"❌ Yuborishda xatolik: {video_title[:50]}..."
+                        f"❌ Yuborishda xatolik: {video_title[:50]}...\n{str(e)}"
                     )
                 
                 finally:
