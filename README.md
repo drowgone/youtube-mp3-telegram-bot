@@ -15,9 +15,6 @@ YouTube playlist'laridan audiolarni yuklab olib, MP3 formatda Telegram orqali yu
 
 ### 1. Repozitoriyani clone qiling
 
-```bash
-cd /home/donegrow/.gemini/antigravity/scratch/youtube-mp3-bot
-```
 
 ### 2. Virtual environment yarating
 
